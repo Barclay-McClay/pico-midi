@@ -1,4 +1,18 @@
 import serial
+import rtmidi
+from rtmidi.midiconstants import CONTROLLER_CHANGE, NOTE_ON, NOTE_OFF
+
+# Load the MIDI I/O
+midiOut = rtmidi.MidiOut()
+available_midi_output_ports = midiOut.get_ports()
+
+# Define input types
+INPUT_TYPES = [
+    # These are the contoller classes defined in the micropython code
+    "ENCODER",
+    "SWITCH"
+    ]
+
 
 ser = None # serial port object
 # Load the Pico Controller serial buffer
@@ -15,44 +29,58 @@ def serial_listener():
     else:
         return None
 
+class inputModule():
+    def __init__(self, alias="Unknown", input_type="SWITCH", midi_index=0):
+        self.alias = alias
+        self.input_type = input_type
+        self.value = 0
+        self.reset_value = 0
+        self.magnitude = 1 # how much each action changes the midi value by
+        self.midi_index = midi_index
+        self.prev_value = "init"
+        self.value = self.reset_value  # the value of the rotary encoder
+        if self.input_type == "ENCODER":
+            self.magnitude = 9              # how much each notch on the encoder changes the midi value by
+            self.midi_constant = CONTROLLER_CHANGE
+        elif self.input_type == "SWITCH":
+            self.midi_constant = NOTE_ON
 
-"""
-# Rotary encoder stuff
-encoder_value = "init"      # the value of the encoder as stored on the pi pico
-rotary_init = 0             # initial value of the rotary encoder/where it resets to
-rotary_mag = 9              # how much each notch on the encoder changes the midi value by
-rotary_value = rotary_init  # the value of the rotary encoder
-rotary_midi_controller = 10 # the midi controller index for the rotary encoder
 
+    def updateEncoder(self, serial_value):
+        if self.prev_value == "init":
+            self.prev_value = serial_value
+        if self.prev_value < serial_value:
+            self.value += self.magnitude
+            self.prev_value = serial_value
+        elif self.prev_value > serial_value:
+            self.value -= self.magnitude
+            self.prev_value = serial_value
+        print("Rotary: ", self.value)
 
-    
-if ser:
-        if ser.inWaiting():
-            picoMessage = ser.readline().decode('utf-8').strip()
-            # The message will either be "ROTARY_PRESS" or an integer
-            if picoMessage == "ROTARY_PRESS":
-                rotary_value = rotary_init
-                print("Rotary: ", rotary_value)
-                midi_message = [CONTROLLER_CHANGE, rotary_midi_controller, rotary_value]
-            else: # picoMessage is an integer, convert it to one
-                encoder_update = int(picoMessage)
-                if encoder_value == "init":
-                    encoder_value = encoder_update
-                if encoder_value < encoder_update:
-                    rotary_value += rotary_mag
-                    encoder_value = encoder_update
-                elif encoder_value > encoder_update:
-                    rotary_value -= rotary_mag
-                    encoder_value = encoder_update
-                # Midi needs to be between 0 and 127
-                if rotary_value < 0:
-                    rotary_value = 0
-                elif rotary_value > 127:
-                    rotary_value = 127
-                # Send the midi message
-                midi_message = [CONTROLLER_CHANGE, rotary_midi_controller, rotary_value]
-                midiOut.send_message(midi_message)
-                print("Rotary: ", rotary_value)
+    def updateSwitch(self, serial_value):
+        if serial_value > 0:
+            self.midi_constant = NOTE_ON
+            self.value = serial_value
+            print(self.alias, "Note ON", self.value)
+        else:
+            self.midi_constant = NOTE_OFF
+            self.value = 0
+            print(self.alias, "Note OFF", self.value)
 
-"""
+    def update(self, serial_value):
+        if self.input_type == "SWITCH":
+            self.updateSwitch(serial_value)
+        elif self.input_type == "ENCODER":
+            self.updateEncoder(serial_value)
+        # SEND THE MIDI MESSAGE
+        # Midi needs to be between 0 and 127
+        if self.value < 0:
+            self.value = 0
+        elif self.value > 127:
+            self.value = 127
+        # Send the midi message
+        midi_message = [self.midi_constant, self.midi_index, self.value]
+        midiOut.send_message(midi_message)
+        #
+
         

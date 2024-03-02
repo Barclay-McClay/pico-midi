@@ -1,7 +1,20 @@
-RED = '#ff0000'
-GREEN = '#00ff00'
-BLUE = '#0000ff'
-YELLOW = '#ffff00'
+# Custom
+DARK = "#0F0F19"
+BG = "#252555"
+MID = "#7180B9"
+LIGHT = "#DFF3E4"
+HIGHLIGHT1 = "#D5573B"
+HIHGHLIGHT2 = "#E8B4BC"
+TEXT = "#00A088"
+
+RED = '#F51D1D'
+GREEN = '#7FB800'
+BLUE = '#00A6ED'
+YELLOW = '#FFB400'
+ORANGE = '#F6511D'
+
+
+# Secondary
 CYAN = '#00ffff'
 MAGENTA = '#ff00ff'
 NAVY = '#000080'
@@ -11,6 +24,7 @@ TEAL = '#008080'
 MAROON = '#800000'
 SILVER = '#c0c0c0'
 
+# Literals
 GRAY = '#808080'
 WHITE = '#ffffff'
 BLACK = '#000000'
@@ -30,5 +44,3 @@ DARK_MAROON = '#400000'
 DARK_SILVER = '#606060'
 DARK_GRAY = '#404040'
 
-BG = "#252555"
-MID = "#505060"

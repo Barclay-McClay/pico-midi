@@ -13,9 +13,10 @@ class PART():
 ###########################################################################################################
 # A 5-pin rotary encoder. It's endless in its rotation, and acts as a momentary switch if pushed (sw pin).
 class pushPot(PART):
-    def __init__(self, alias, sw, dt, clk):
+    def __init__(self, potAlias, switchAlias, sw, dt, clk):
         super().__init__()
-        self.alias = alias
+        self.potAlias = potAlias
+        self.switchAlias = switchAlias
         self.SW = Pin(sw,Pin.IN,Pin.PULL_UP)
         self.DT = dt
         self.CLK = clk
@@ -31,12 +32,14 @@ class pushPot(PART):
         try:
             self.value = self.pot.value()
             if self.SW.value()==0 and self.button_press == 0:  
-                print(str(self.alias) + "_" + "PUSH") # < --------- OUTPUT
+                print(str(self.switchAlias) + "_" + "SWITCH" + "_" + "1") # < --------- OUTPUT
                 self.button_press = 1
             elif self.SW.value()==1:
-                self.button_press = 0
+                if self.button_press != 0:
+                    print(str(self.switchAlias) + "_" + "SWITCH" + "_" + "0") # < --------- OUTPUT
+                    self.button_press = 0
             if self.prev_val != self.value:
-                print(str(self.alias) + "_" + str(self.value))  # <------------------------- OUTPUT
+                print(str(self.potAlias) +  "_" + "ENCODER" + "_" + str(self.value))  # <------------------------- OUTPUT
                 self.prev_val = self.value
         except Exception as e:
             print(e)
