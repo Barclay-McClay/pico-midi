@@ -7,7 +7,8 @@ from listener import (
     available_midi_output_ports, 
     serial_listener,
     inputModule,
-    INPUT_TYPES
+    INPUT_TYPES,
+    INPUT_BEHAVIOURS,
 )
 
 
@@ -75,6 +76,15 @@ class App(threading.Thread):
                         self.varConfigMidi_index.set(f"{selected_module.midi_index}")
                         self.varConfigMagnitude.set(f"{selected_module.magnitude}")
                         self.varConfigDefaultValue.set(f"{selected_module.reset_value}")
+                        # Behaviours:
+                        menu = self.wConfigBehaviour['menu']
+                        menu.delete(0, 'end')
+                        self.varConfigBehaviour.set(selected_module.behaviour)
+                        new_options = INPUT_BEHAVIOURS[selected_module.input_type]
+                        for value in new_options:
+                            menu.add_command(label=value, 
+                                            command=lambda v=value: self.set_behaviour(v))
+                        self.wConfigBehaviour.configure(bg=colours.BG, fg=colours.YELLOW, padx=5, pady=5, font="lucidatypewriter 10", relief='flat', activebackground=colours.HIGHLIGHT1, highlightbackground=colours.BG, highlightcolor=colours.YELLOW, activeforeground=colours.DARK, width=10, height=1)
                         print("Selected input module: ", self.selected_input_module_alias, "Index:", index)
                     else:
                         print("!! An error occured- No module at index ", index)
@@ -86,6 +96,10 @@ class App(threading.Thread):
                     self.varConfigMidi_index.set(f"")
                     self.varConfigMagnitude.set(f"")
                     self.varConfigDefaultValue.set(f"")
+                    self.wConfigBehaviour['menu'].delete(0, 'end')
+                    self.wConfigBehaviour['menu'].add_command(label='---')
+                    self.varConfigBehaviour.set("---")
+                    self.wConfigBehaviour.configure(bg=colours.BG, fg=colours.YELLOW, padx=5, pady=5, font="lucidatypewriter 10", relief='flat', activebackground=colours.HIGHLIGHT1, highlightbackground=colours.BG, highlightcolor=colours.YELLOW, activeforeground=colours.DARK, width=10, height=1)
                     print(f"No module at index NONE")
     
     def auto_config_toggle(self):
@@ -98,6 +112,12 @@ class App(threading.Thread):
             self.bAutoConfig.configure(bg=colours.HIGHLIGHT1,fg=colours.DARK, text="Get Inputs")
             self.txtSerialBuffer.configure(fg=colours.YELLOW)
             app.txtSerialBuffer.delete('1.0', tk.END)
+
+    def set_behaviour(self, value):
+        self.varConfigBehaviour.set(value)
+        moduleAlias = self.INPUTS[self.selected_input_module_index]['alias']
+        selected_module = SERIAL_INPUTS[moduleAlias]
+        selected_module.behaviour = self.varConfigBehaviour.get()
 
     def set_midi_noteIndex(self, *args):
         moduleAlias = self.INPUTS[self.selected_input_module_index]['alias']
@@ -239,6 +259,11 @@ class App(threading.Thread):
         self.lbConfigDisplay_midiconstant = tk.Label(self.frConfigAreaBody, padx=5,pady=5, bg=colours.BG, fg=colours.TEXT, font="lucidatypewriter 10", text="MIDI CONSTANT:")
         self.varConfigDisplayMidiConstant = tk.StringVar(value="---")
         self.wConfigDisplay_midiconstant = tk.Label(self.frConfigAreaBody, bg=colours.BG, fg=colours.HIGHLIGHT1, font="lucidatypewriter 10", textvariable=self.varConfigDisplayMidiConstant, width=3)
+        # Behaviour Dropdown:
+        self.lbConfigBehaviour = tk.Label(self.frConfigAreaBody, padx=5,pady=5, bg=colours.BG, fg=colours.TEXT, font="lucidatypewriter 10", text="BEHAVIOUR:")
+        self.varConfigBehaviour = tk.StringVar(value="---")
+        self.wConfigBehaviour = tk.OptionMenu(self.frConfigAreaBody, self.varConfigBehaviour,'---')
+        self.wConfigBehaviour.configure(bg=colours.BG, fg=colours.YELLOW, padx=5, pady=5, font="lucidatypewriter 10", relief='flat', activebackground=colours.HIGHLIGHT1, highlightbackground=colours.BG, highlightcolor=colours.YELLOW, activeforeground=colours.DARK, width=10, height=1)
         # cc/note index
         self.lbConfigMidi_index = tk.Label(self.frConfigAreaBody, padx=5,pady=5, bg=colours.BG, fg=colours.TEXT, font="lucidatypewriter 10", text="CC/NOTE INDEX:")
         self.varConfigMidi_index = tk.StringVar(value="")
@@ -256,6 +281,8 @@ class App(threading.Thread):
         self.wConfigDefault_value.bind("<KeyRelease>",self.set_default_value) # bind the function to the entry widget's KeyRelease event
         # Grid
         r = 0
+        self.lbConfigBehaviour.grid(row=r,column=0,sticky='nw')
+        self.wConfigBehaviour.grid(row=r,column=1,sticky='nw'); r+=1
         self.lbConfigDisplay_value.grid(row=r,column=0,sticky='nw')
         self.wConfigDisplay_value.grid(row=r,column=1,sticky='nw'); r+=1
         self.lbConfigDisplay_midiconstant.grid(row=r,column=0,sticky='nw')
@@ -370,9 +397,6 @@ while True:
                     break
             if app.selected_input_module_alias == command_alias:
                 app.varConfigDisplayValue.set(input_module.value)
-                        
-
-
 
     # Get Inputs #######################################################
 
